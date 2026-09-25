@@ -1,0 +1,6 @@
+{
+  "name": "AL-IMRAN Editorial Blog & Magazine",
+  "description": "A premium modern editorial blog, technology magazine, and content platform with a full-featured Admin Control Center.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
