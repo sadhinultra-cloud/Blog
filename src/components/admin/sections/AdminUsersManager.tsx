@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth, UserRole, AppUserProfile } from '../../../context/AuthContext';
-import { BOOTSTRAP_ADMIN_EMAIL } from '../../../firebase';
+import { BOOTSTRAP_ADMIN_EMAIL, firebaseConfig } from '../../../firebase';
 import {
   Users,
   Shield,
@@ -178,7 +178,7 @@ export const AdminUsersManager: React.FC = () => {
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Firebase Connected
               </span>
-              <span className="text-xs text-neutral-400 font-mono">Project: blogweb</span>
+              <span className="text-xs text-neutral-400 font-mono">Project: {firebaseConfig.projectId}</span>
             </div>
             <h2 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
               Firebase ইউজার ও এডমিন কন্ট্রোল

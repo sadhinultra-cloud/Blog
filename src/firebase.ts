@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { getAnalytics, isSupported, Analytics } from 'firebase/analytics';
 import {
   getAuth,
   GoogleAuthProvider,
@@ -26,20 +27,45 @@ import {
   getDocFromServer,
   Timestamp,
 } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+export const firebaseConfig = {
+  apiKey: "AIzaSyA2d1CrRWdOKD9ULgb4zA9Hk3YFirSVf_M",
+  authDomain: "blogweb-c6af2.firebaseapp.com",
+  projectId: "blogweb-c6af2",
+  storageBucket: "blogweb-c6af2.firebasestorage.app",
+  messagingSenderId: "1066206101419",
+  appId: "1:1066206101419:web:f88e069c4d20a7f0f1dcee",
+  measurementId: "G-QKKC0HDZ6Y"
+};
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 
-// CRITICAL: Must pass firestoreDatabaseId to getFirestore
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+// Initialize Analytics (safely checking if browser environment supports it)
+export let analytics: Analytics | null = null;
+if (typeof window !== 'undefined') {
+  isSupported()
+    .then((supported) => {
+      if (supported) {
+        analytics = getAnalytics(app);
+      }
+    })
+    .catch((err) => {
+      console.warn('Firebase Analytics not supported in this environment:', err);
+    });
+}
+
+// Initialize Firestore & Auth
+export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
 // Standard developer bootstrapped admin
 export const BOOTSTRAP_ADMIN_EMAIL = 'sadhinultra@gmail.com';
 
-// Test connection on boot as mandated by security specification
+// Test connection on boot
 async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
@@ -51,7 +77,7 @@ async function testConnection() {
 }
 testConnection();
 
-// Standard Firestore error handler conforming to skill specification
+// Standard Firestore error handler
 export enum OperationType {
   CREATE = 'create',
   UPDATE = 'update',
@@ -100,4 +126,25 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   throw new Error(JSON.stringify(errInfo));
 }
 
+export {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  collection,
+  getDocs,
+  onSnapshot,
+  query,
+  where,
+  orderBy,
+  Timestamp,
+  signInWithPopup,
+  fbSignOut,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  getAnalytics,
+};
 export type { FirebaseUser };
