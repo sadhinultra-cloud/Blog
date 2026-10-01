@@ -46,6 +46,8 @@ import { AdminFooterSettings } from './sections/AdminFooterSettings';
 import { AdminSeoSettings } from './sections/AdminSeoSettings';
 import { AdminSiteSettings } from './sections/AdminSiteSettings';
 import { AdminAdsManager } from './sections/AdminAdsManager';
+import { AdminUsersManager } from './sections/AdminUsersManager';
+import { useAuth } from '../../context/AuthContext';
 
 interface AdminDashboardProps {
   onBackToSite: () => void;
@@ -72,7 +74,8 @@ export type AdminTab =
   | 'footer'
   | 'seo'
   | 'settings'
-  | 'ads';
+  | 'ads'
+  | 'users';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onBackToSite,
@@ -88,6 +91,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setThemeMode,
     adminLogout,
   } = useBlog();
+  const { userProfile, currentUser, logout: authLogout } = useAuth();
 
   const [activeTab, setActiveTab] = useState<AdminTab>('analytics');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
@@ -162,6 +166,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         { id: 'ads', label: 'Ad & Google Ads', icon: DollarSign },
         { id: 'seo', label: 'SEO & Syndication', icon: Search },
         { id: 'settings', label: 'Site Settings & Backups', icon: Settings },
+      ],
+    },
+    {
+      label: 'Security & Access',
+      items: [
+        { id: 'users', label: 'Users & Firebase Roles', icon: ShieldCheck },
       ],
     },
   ];
@@ -314,22 +324,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}
           >
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-6 h-6 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
-                AI
-              </span>
+              {userProfile?.photoURL ? (
+                <img
+                  src={userProfile.photoURL}
+                  alt={userProfile.displayName}
+                  className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <span className="w-6 h-6 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                  {(userProfile?.displayName || currentUser?.email || 'AI').charAt(0).toUpperCase()}
+                </span>
+              )}
               <div className="min-w-0">
                 <span className="text-[11px] font-bold block truncate" style={{ color: 'var(--text-primary)' }}>
-                  Al-Imran
+                  {userProfile?.displayName || (currentUser?.email ? currentUser.email.split('@')[0] : 'Al-Imran')}
                 </span>
-                <span className="text-[9px] text-neutral-400 font-mono block">
-                  Editor-in-Chief
+                <span className="text-[9px] text-neutral-400 font-mono block capitalize">
+                  {userProfile?.role ? userProfile.role.replace('_', ' ') : 'Administrator'}
                 </span>
               </div>
             </div>
 
             <button
-              onClick={adminLogout}
-              className="p-1 rounded text-neutral-400 hover:text-rose-600 transition-colors"
+              onClick={() => {
+                adminLogout();
+                authLogout().catch(() => {});
+              }}
+              className="p-1 rounded text-neutral-400 hover:text-rose-600 transition-colors cursor-pointer"
               title="Sign Out of Admin Console"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -378,6 +399,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {activeTab === 'seo' && <AdminSeoSettings onOpenFeeds={onOpenFeeds} />}
         {activeTab === 'ads' && <AdminAdsManager />}
         {activeTab === 'settings' && <AdminSiteSettings />}
+        {activeTab === 'users' && <AdminUsersManager />}
       </main>
     </div>
   );

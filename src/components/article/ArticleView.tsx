@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useBlog } from '../../context/BlogContext';
+import { useAuth } from '../../context/AuthContext';
 import { Post, Comment } from '../../types';
 import { ShareButtons } from '../common/ShareButtons';
 import { AdSlot } from '../ads/AdSlot';
@@ -52,12 +53,22 @@ export const ArticleView: React.FC<ArticleViewProps> = ({
   const [commentFeedback, setCommentFeedback] = useState<string | null>(null);
   const [copiedCodeIdx, setCopiedCodeIdx] = useState<number | null>(null);
 
+  const { currentUser, userProfile } = useAuth();
+
   // Increment view count on mount
   useEffect(() => {
     if (post) {
       incrementPostViews(post.id);
     }
   }, [post?.id, incrementPostViews]);
+
+  // Auto-fill commenter details from Firebase user
+  useEffect(() => {
+    if (currentUser) {
+      if (!commentName) setCommentName(userProfile?.displayName || currentUser.displayName || '');
+      if (!commentEmail) setCommentEmail(currentUser.email || '');
+    }
+  }, [currentUser, userProfile]);
 
   // Track reading progress
   useEffect(() => {

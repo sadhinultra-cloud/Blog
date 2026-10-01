@@ -1,0 +1,84 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role-based access control (admin, editor, user)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 1024 },
+        "role": { "type": "string", "enum": ["super_admin", "admin", "editor", "user"] },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Trusted admin role lookup document for zero-trust security",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 256 },
+        "role": { "type": "string", "enum": ["super_admin", "admin"] },
+        "addedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["email", "role"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "Blog publication article entity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 500 },
+        "slug": { "type": "string", "maxLength": 300 },
+        "excerpt": { "type": "string", "maxLength": 2000 },
+        "content": { "type": "string", "maxLength": 100000 },
+        "featuredImage": { "type": "string", "maxLength": 2048 },
+        "categoryId": { "type": "string", "maxLength": 128 },
+        "authorId": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["draft", "published", "scheduled", "archived"] },
+        "viewsCount": { "type": "number" },
+        "publishedAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["title", "slug", "content", "status"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "User article comment with moderation state",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "postId": { "type": "string", "maxLength": 128 },
+        "authorName": { "type": "string", "maxLength": 100 },
+        "authorEmail": { "type": "string", "maxLength": 256 },
+        "content": { "type": "string", "maxLength": 5000 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["approved", "pending", "spam"] },
+        "userId": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["postId", "authorName", "content", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User accounts with permission roles"
+    },
+    "/admins/{userId}": {
+      "schema": "AdminRecord",
+      "description": "Authorized administrators with elevated access"
+    },
+    "/posts/{postId}": {
+      "schema": "Post",
+      "description": "Editorial posts collection"
+    },
+    "/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Post feedback and discussions"
+    }
+  }
+}

@@ -14,6 +14,9 @@ import { CategoriesDirectoryView } from './components/pages/CategoriesDirectoryV
 import { ContactPageView } from './components/pages/ContactPageView';
 import { CustomPageView } from './components/pages/CustomPageView';
 
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthModal } from './components/common/AuthModal';
+
 // Modals
 import { SearchModal } from './components/common/SearchModal';
 import { AdminLoginModal } from './components/admin/AdminLoginModal';
@@ -22,10 +25,11 @@ import { AdSlot } from './components/ads/AdSlot';
 
 // Admin
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import { Lock, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Lock, ArrowLeft, AlertCircle, Shield } from 'lucide-react';
 
 const BlogAppContent: React.FC = () => {
   const { siteSettings, customPages, isAdminLoggedIn } = useBlog();
+  const { isAdmin, loginWithGoogle } = useAuth();
 
   // Navigation state: 'home', 'article/slug', 'category/slug', 'categories', 'contact', 'admin', or custom page slug
   const [route, setRoute] = useState<string>(() => {
@@ -35,6 +39,7 @@ const BlogAppContent: React.FC = () => {
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isFeedsOpen, setIsFeedsOpen] = useState(false);
 
   // Sync hash with route
@@ -79,7 +84,7 @@ const BlogAppContent: React.FC = () => {
   // Render the appropriate public view or admin
   const renderMainView = () => {
     if (isAdminRoute) {
-      if (!isAdminLoggedIn) {
+      if (!isAdminLoggedIn && !isAdmin) {
         return (
           <div className="min-h-[70vh] flex items-center justify-center p-6">
             <div
@@ -93,23 +98,24 @@ const BlogAppContent: React.FC = () => {
                 Editorial Admin Console
               </h2>
               <p className="text-xs text-neutral-500 leading-relaxed">
-                Authentication required. Enter your editorial passcode to manage dispatches, taxonomies, and design configurations.
+                প্রশাসনিক নিয়ন্ত্রণ কেন্দ্রে প্রবেশ করতে Firebase Admin বা পাসকোড দিয়ে প্রমাণীকরণ করুন।
               </p>
-              <div className="flex gap-2 pt-2">
+              <div className="space-y-2 pt-2">
+                <button
+                  onClick={() => setIsAdminLoginOpen(true)}
+                  className="w-full py-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+                  style={{ backgroundColor: 'var(--btn-bg)', color: 'var(--btn-text)' }}
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>এডমিন লগইন / Google দিয়ে সাইন ইন</span>
+                </button>
                 <button
                   onClick={() => navigateTo('home')}
-                  className="flex-1 py-2 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-900"
+                  className="w-full py-2 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-900"
                   style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Return Home</span>
-                </button>
-                <button
-                  onClick={() => setIsAdminLoginOpen(true)}
-                  className="flex-1 py-2 rounded-xl text-xs font-bold cursor-pointer"
-                  style={{ backgroundColor: 'var(--btn-bg)', color: 'var(--btn-text)' }}
-                >
-                  Sign In
+                  <span>ওয়েবসাইটে ফিরে যান</span>
                 </button>
               </div>
             </div>
@@ -252,6 +258,7 @@ const BlogAppContent: React.FC = () => {
           onOpenSearch={() => setIsSearchOpen(true)}
           onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
           onOpenFeeds={() => setIsFeedsOpen(true)}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
         />
       )}
 
@@ -297,6 +304,11 @@ const BlogAppContent: React.FC = () => {
         }}
       />
 
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
+
       <FeedsViewerModal
         isOpen={isFeedsOpen}
         onClose={() => setIsFeedsOpen(false)}
@@ -307,8 +319,10 @@ const BlogAppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <BlogProvider>
-      <BlogAppContent />
-    </BlogProvider>
+    <AuthProvider>
+      <BlogProvider>
+        <BlogAppContent />
+      </BlogProvider>
+    </AuthProvider>
   );
 }

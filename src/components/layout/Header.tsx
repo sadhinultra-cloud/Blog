@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useBlog } from '../../context/BlogContext';
+import { useAuth } from '../../context/AuthContext';
 import {
   Search,
   Sun,
@@ -12,6 +13,10 @@ import {
   Languages,
   ExternalLink,
   ChevronDown,
+  User,
+  LogOut,
+  Shield,
+  Crown,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -20,6 +25,7 @@ interface HeaderProps {
   onOpenSearch: () => void;
   onOpenAdminLogin: () => void;
   onOpenFeeds: () => void;
+  onOpenAuthModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -28,6 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSearch,
   onOpenAdminLogin,
   onOpenFeeds,
+  onOpenAuthModal,
 }) => {
   const {
     siteSettings,
@@ -37,6 +44,8 @@ export const Header: React.FC<HeaderProps> = ({
     setLanguage,
     isAdminLoggedIn,
   } = useBlog();
+  const { currentUser, userProfile, isAdmin, isEditor, logout } = useAuth();
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigation = siteSettings?.navigation || [];
@@ -208,28 +217,109 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
+          {/* Firebase User Profile / Login */}
+          {currentUser ? (
+            <div className="relative">
+              <button
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-xl border text-xs font-semibold hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors cursor-pointer"
+                style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--card-bg)' }}
+              >
+                {userProfile?.photoURL ? (
+                  <img
+                    src={userProfile.photoURL}
+                    alt={userProfile.displayName}
+                    className="w-6 h-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px]"
+                    style={{ backgroundColor: 'var(--btn-bg)', color: 'var(--btn-text)' }}
+                  >
+                    {(userProfile?.displayName || currentUser.email || 'U').charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="max-w-[90px] truncate hidden sm:inline" style={{ color: 'var(--text-primary)' }}>
+                  {userProfile?.displayName || currentUser.email?.split('@')[0]}
+                </span>
+                <ChevronDown className="w-3 h-3 text-neutral-400" />
+              </button>
+
+              {userDropdownOpen && (
+                <div
+                  className="absolute right-0 mt-2 w-56 rounded-2xl border p-3 shadow-xl space-y-2.5 z-50 animate-in fade-in zoom-in-95"
+                  style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}
+                  onClick={() => setUserDropdownOpen(false)}
+                >
+                  <div className="border-b pb-2 space-y-1" style={{ borderColor: 'var(--border-color)' }}>
+                    <div className="font-bold text-xs truncate" style={{ color: 'var(--text-primary)' }}>
+                      {userProfile?.displayName || 'User Profile'}
+                    </div>
+                    <div className="text-[10px] text-neutral-400 font-mono truncate">
+                      {currentUser.email}
+                    </div>
+                    <div className="pt-0.5">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-50 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        {userProfile?.role ? userProfile.role.replace('_', ' ') : 'Reader'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {(isAdmin || isEditor || isAdminLoggedIn) && (
+                    <button
+                      onClick={() => onNavigate('admin')}
+                      className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2 cursor-pointer"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      <Lock className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Admin Console (এডমিন)</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => logout()}
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>সাইন আউট (Log Out)</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => onOpenAuthModal?.()}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer text-neutral-600 dark:text-neutral-300 shadow-xs"
+              style={{ borderColor: 'var(--border-color)' }}
+              title="Sign in with Google or Email"
+            >
+              <User className="w-3.5 h-3.5 text-blue-600" />
+              <span>সাইন ইন</span>
+            </button>
+          )}
+
           {/* Admin Desk Access */}
           <button
             onClick={() => {
-              if (isAdminLoggedIn) {
+              if (isAdminLoggedIn || isAdmin) {
                 onNavigate('admin');
               } else {
                 onOpenAdminLogin();
               }
             }}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-              isAdminLoggedIn
+              isAdminLoggedIn || isAdmin
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'border hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500'
             }`}
             style={{
-              borderColor: !isAdminLoggedIn ? 'var(--border-color)' : undefined,
+              borderColor: !(isAdminLoggedIn || isAdmin) ? 'var(--border-color)' : undefined,
             }}
-            title={isAdminLoggedIn ? 'Access Admin Console' : 'Editor Login'}
+            title={isAdminLoggedIn || isAdmin ? 'Access Admin Console' : 'Editor Login'}
           >
             <Lock className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">
-              {isAdminLoggedIn ? 'Admin Desk' : 'Editor'}
+              {isAdminLoggedIn || isAdmin ? 'Admin Desk' : 'Editor'}
             </span>
           </button>
 
