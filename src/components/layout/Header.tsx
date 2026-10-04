@@ -6,7 +6,6 @@ import {
   Sun,
   Moon,
   Monitor,
-  Lock,
   Menu,
   X,
   Rss,
@@ -23,7 +22,6 @@ interface HeaderProps {
   onNavigate: (route: string) => void;
   currentRoute: string;
   onOpenSearch: () => void;
-  onOpenAdminLogin: () => void;
   onOpenFeeds: () => void;
   onOpenAuthModal?: () => void;
 }
@@ -32,7 +30,6 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigate,
   currentRoute,
   onOpenSearch,
-  onOpenAdminLogin,
   onOpenFeeds,
   onOpenAuthModal,
 }) => {
@@ -265,17 +262,6 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
                   </div>
 
-                  {(isAdmin || isEditor || isAdminLoggedIn) && (
-                    <button
-                      onClick={() => onNavigate('admin')}
-                      className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2 cursor-pointer"
-                      style={{ color: 'var(--text-primary)' }}
-                    >
-                      <Lock className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Admin Console (এডমিন)</span>
-                    </button>
-                  )}
-
                   <button
                     onClick={() => logout()}
                     className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer"
@@ -297,31 +283,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span>সাইন ইন</span>
             </button>
           )}
-
-          {/* Admin Desk Access */}
-          <button
-            onClick={() => {
-              if (isAdminLoggedIn || isAdmin) {
-                onNavigate('admin');
-              } else {
-                onOpenAdminLogin();
-              }
-            }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-              isAdminLoggedIn || isAdmin
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'border hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500'
-            }`}
-            style={{
-              borderColor: !(isAdminLoggedIn || isAdmin) ? 'var(--border-color)' : undefined,
-            }}
-            title={isAdminLoggedIn || isAdmin ? 'Access Admin Console' : 'Editor Login'}
-          >
-            <Lock className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">
-              {isAdminLoggedIn || isAdmin ? 'Admin Desk' : 'Editor'}
-            </span>
-          </button>
 
           {/* Mobile Menu Toggle Button */}
           <button
@@ -397,17 +358,29 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             </div>
 
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                if (isAdminLoggedIn) onNavigate('admin');
-                else onOpenAdminLogin();
-              }}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold"
-              style={{ backgroundColor: 'var(--btn-bg)', color: 'var(--btn-text)' }}
-            >
-              {isAdminLoggedIn ? 'Dashboard' : 'Sign In'}
-            </button>
+            {currentUser ? (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  logout();
+                }}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 border border-rose-200 dark:border-rose-900"
+              >
+                Log Out
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenAuthModal?.();
+                }}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5"
+                style={{ backgroundColor: 'var(--btn-bg)', color: 'var(--btn-text)' }}
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>সাইন ইন</span>
+              </button>
+            )}
           </div>
         </div>
       )}

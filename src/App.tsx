@@ -19,45 +19,70 @@ import { AuthModal } from './components/common/AuthModal';
 
 // Modals
 import { SearchModal } from './components/common/SearchModal';
-import { AdminLoginModal } from './components/admin/AdminLoginModal';
 import { FeedsViewerModal } from './components/common/FeedsViewerModal';
 import { AdSlot } from './components/ads/AdSlot';
 
 // Admin
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import { Lock, ArrowLeft, AlertCircle, Shield } from 'lucide-react';
+import { AdminLoginPage } from './components/admin/AdminLoginPage';
+import { ArrowLeft } from 'lucide-react';
+
+const parseRouteFromLocation = (): string => {
+  if (typeof window === 'undefined') return 'home';
+
+  // 1. Check pathname (e.g. /admin, /admin/)
+  const pathname = window.location.pathname.replace(/^\/+|\/+$/g, '').trim();
+  if (pathname === 'admin' || pathname.startsWith('admin/')) {
+    return 'admin';
+  }
+
+  // 2. Check hash (e.g. #admin, #/admin)
+  const hash = window.location.hash.replace(/^#\/?/, '').trim();
+  if (hash === 'admin' || hash.startsWith('admin/')) {
+    return 'admin';
+  }
+
+  if (hash) return hash;
+  if (pathname && pathname !== 'index.html') return pathname;
+  return 'home';
+};
 
 const BlogAppContent: React.FC = () => {
   const { siteSettings, customPages, isAdminLoggedIn } = useBlog();
-  const { isAdmin, loginWithGoogle } = useAuth();
+  const { isAdmin } = useAuth();
 
   // Navigation state: 'home', 'article/slug', 'category/slug', 'categories', 'contact', 'admin', or custom page slug
-  const [route, setRoute] = useState<string>(() => {
-    const hash = window.location.hash.replace('#', '').trim();
-    return hash || 'home';
-  });
+  const [route, setRoute] = useState<string>(() => parseRouteFromLocation());
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isFeedsOpen, setIsFeedsOpen] = useState(false);
 
-  // Sync hash with route
+  // Sync route with URL bar
   const navigateTo = (newRoute: string) => {
     setRoute(newRoute);
-    window.location.hash = newRoute === 'home' ? '' : newRoute;
+    if (newRoute === 'home') {
+      window.history.pushState(null, '', '/');
+    } else if (newRoute === 'admin') {
+      window.history.pushState(null, '', '/admin');
+    } else {
+      window.location.hash = newRoute;
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '').trim();
-      setRoute(hash || 'home');
+    const handleLocationChange = () => {
+      setRoute(parseRouteFromLocation());
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
   }, []);
 
   // Global keydown for ⌘K or Ctrl+K
@@ -86,40 +111,10 @@ const BlogAppContent: React.FC = () => {
     if (isAdminRoute) {
       if (!isAdminLoggedIn && !isAdmin) {
         return (
-          <div className="min-h-[70vh] flex items-center justify-center p-6">
-            <div
-              className="max-w-md w-full p-8 rounded-2xl border text-center space-y-4 shadow-sm"
-              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}
-            >
-              <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto text-neutral-500">
-                <Lock className="w-6 h-6" />
-              </div>
-              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                Editorial Admin Console
-              </h2>
-              <p className="text-xs text-neutral-500 leading-relaxed">
-                প্রশাসনিক নিয়ন্ত্রণ কেন্দ্রে প্রবেশ করতে Firebase Admin বা পাসকোড দিয়ে প্রমাণীকরণ করুন।
-              </p>
-              <div className="space-y-2 pt-2">
-                <button
-                  onClick={() => setIsAdminLoginOpen(true)}
-                  className="w-full py-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center gap-2 shadow-xs"
-                  style={{ backgroundColor: 'var(--btn-bg)', color: 'var(--btn-text)' }}
-                >
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>এডমিন লগইন / Google দিয়ে সাইন ইন</span>
-                </button>
-                <button
-                  onClick={() => navigateTo('home')}
-                  className="w-full py-2 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-900"
-                  style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>ওয়েবসাইটে ফিরে যান</span>
-                </button>
-              </div>
-            </div>
-          </div>
+          <AdminLoginPage
+            onLoginSuccess={() => setRoute('admin')}
+            onBackToSite={() => navigateTo('home')}
+          />
         );
       }
 
@@ -256,7 +251,6 @@ const BlogAppContent: React.FC = () => {
           onNavigate={navigateTo}
           currentRoute={route}
           onOpenSearch={() => setIsSearchOpen(true)}
-          onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
           onOpenFeeds={() => setIsFeedsOpen(true)}
           onOpenAuthModal={() => setIsAuthModalOpen(true)}
         />
@@ -292,15 +286,6 @@ const BlogAppContent: React.FC = () => {
         onSelectPost={slug => {
           setIsSearchOpen(false);
           navigateTo(`article/${slug}`);
-        }}
-      />
-
-      <AdminLoginModal
-        isOpen={isAdminLoginOpen}
-        onClose={() => setIsAdminLoginOpen(false)}
-        onLoginSuccess={() => {
-          setIsAdminLoginOpen(false);
-          navigateTo('admin');
         }}
       />
 
